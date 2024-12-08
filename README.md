@@ -1,4 +1,4 @@
-# Complexité
+# Réseau
 ![Python 3.8.0](https://img.shields.io/badge/Python-3.8.0-yellow?style=plastic)
 <!-- ```
 cd existing_repo
@@ -12,38 +12,40 @@ Projet de Réseau.
 
 ## Description
 Le but de ce projet est de permettre des communications entre îlots IPv6 en utilisants des tunnels simples au-dessus de IPv4.
-[alt text](https://etulab.univ-amu.fr/b24024546/projet_reseau/-/blob/main/images/reseau6-tun.png?raw=true)
+![screenshot](images/reseau6-tun.png)
+Ce pendant, nous allons relier nos deux îlots IPv6 via le réseau IPv4 en créant un tunnel IPv6 sur IPv4 entre VM1 et VM3 (voir figure).
 
 ## Structure du projet
 
-Ceci montre brièvement comment ce mini-projet est organisé :
-
 - [x] `images/`: contenant l'image d'illustration:
     - `reseau6-tun.png` 
-- [x] `scripts/`: contient tous les scripts python.
-    - `conf1.sh` : contient des commandes de configuration permettant de lancer le tunnel étant dans la machine virtuelle 1.
-    - `conf3.sh` : contient des commandes de configuration permettant de lancer le tunnel à partir de la machine virtuelle 3.
-    - `tunalloc.py` : fichier dans lequel se trouve la bibliothèque `Iftun` qui a pour but de créer l’interface virtuelle.
-    - `extremity.py` : fichier contenant la bibliothèque `Extremite` dans laquelle se trouvent les fonctions `ext_out` : qui permet de créer une extrémité qui retransmet le trafic provenant de la socket TCP dans le tun0 local. et la fonction `ext_in`  qui ouvre une connexion TCP avec l’autre extrémité du tunnel, puis lit le trafic provenant de tun0 et le retransmet dans la socket.
-    - `tuninit1.py` : Script permettant d'initialiser la bibliothèque `Iftun` afin de créer l'interface virtuelle et lancer le server permettant la communication à partir de la machine VM1.
-    - `tuninit3.py` : Script permettant d'initialiser la bibliothèque `Iftun` afin de créer l'interface virtuelle et lancer le server permettant la communication à partir de la machine VM3.
-		
-
+- [x] `v_machines/`: contient les dossiers répresentant les machines virtuelles et leur configurations. 
+    - [x] `partage/`: contient tous les scripts python et fichiers de configuration du tunnel.
+        - `extremity.py/`: Contient le code servant à gérer le trafic entre extrémités du tunnel.
+        - `iftun.py/`: contient tous le code permettant la création du tunnel.
+        - `processing.py/`: contient le données nécessaire au traitement d'encapsulation et decapsulation des paquets réçus.
+        - `tuninit.py/`: Script permettant d'initialiser la bibliothèque `Iftun` afin de créer l'interface virtuelle et lancer le server permettant la communication à partir d'une machine (ex. VM1 ou VM3).
+        - `tunnel64d.sh/`: permet de lire la configuration contenue dans `tun_side1.txt` ou `tun_side2.txt` et appeler `tuninit.py` pour initialiser un tunnel avec les données adéquats.
+        - `tun_side1.txt/` et `tun_side2.txt/`: Contiennent les configuration sélon l'extrimité du tunnel choisi, servant d'entrée au fichier `tunnel64d.sh`.
 
 
 ## Usage
-Cloner le projet via un terminal dans un dossier donné:
+Cloner le projet via un terminal dans un dossier donné :
 ```
 clone https://etulab.univ-amu.fr/b24024546/projet_reseau.git
-cd projet_reseau/scripts/
+cd projet_reseau/v_machines/
 
-# Exécution à partir de VM1:
-sudo chmod +x conf1.sh
-./conf1.sh
+# Une fois les machines virtuelles lanchées:
+# Naviguer vers : '/mnt/partage/',  et donner le privilège d'exécution au fichier suivant:
 
-# Exécution à partir de VM3:
-sudo chmod +x conf3.sh
-./conf3.sh
+sudo chmod +x tunnel64d.sh
+
+# A partir de VM1, faire:
+./conf1.sh tun_side1.txt
+
+# A partir de VM3, faire:
+./conf1.sh tun_side2.txt
+
 ```
 
 ## Auteurs 
