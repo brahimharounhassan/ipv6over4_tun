@@ -1,9 +1,16 @@
 # interface tun
 tun=tun1
 # adresse locale 
-inip="172.16.2.163"
+inip=172.16.2.163
 inport=123
-options="fc00:1234:ffff::2/64"
+tunaddr=fc00:1234:ffff::2/64
 # adresse distante
-outip="172.16.2.131"
+outip=172.16.2.131
 outport=123
+# ipv4_gateway
+ipv4_gateway=172.16.2.162
+# ipv6_gateway 
+ipv6_gateway=fc00:1234:ffff::
+# ipv6_dst_lan
+ipv6_dst_lan=fc00:1234:3::/64
+# Fin

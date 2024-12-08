@@ -1,41 +1,27 @@
 #!/bin/bash
 
-# Vérifier si un argument a été passé pour le fichier de configuration
-if [ -z "$1" ]; then
-    echo "Erreur : aucun fichier de configuration spécifié."
-    echo "Usage: $0 <fichier_config>"
+# Vérifier si un fichier a été passé en argument
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <fichier.txt>"
     exit 1
 fi
 
-# Nom du fichier de configuration passé en argument
-config_file="$1"
+# Fichier d'entrée
+file="$1"
 
-# Vérifier si le fichier existe
-if [ ! -f "$config_file" ]; then
-    echo "Erreur : Le fichier '$config_file' n'existe pas."
-    exit 1
-fi
-
-# Lire les valeurs à partir du fichier de configuration
-while IFS= read -r line; do
-    # Vérifier si la ligne contient une configuration et l'ignorer si c'est un commentaire
-    if [[ "$line" =~ ^[a-zA-Z] ]]; then
-        # Utiliser grep et awk pour extraire les valeurs
-        if [[ "$line" =~ ^tun= ]]; then
-            tun=$(echo "$line" | awk -F= '{print $2}')
-        elif [[ "$line" =~ ^inip= ]]; then
-            inip=$(echo "$line" | awk -F= '{print $2}')
-        elif [[ "$line" =~ ^inport= ]]; then
-            inport=$(echo "$line" | awk -F= '{print $2}')
-        elif [[ "$line" =~ ^options= ]]; then
-            options=$(echo "$line" | awk -F= '{print $2}')
-        elif [[ "$line" =~ ^outip= ]]; then
-            outip=$(echo "$line" | awk -F= '{print $2}')
-        elif [[ "$line" =~ ^outport= ]]; then
-            outport=$(echo "$line" | awk -F= '{print $2}')
-        fi
+# Lire le fichier ligne par ligne
+while IFS='=' read -r key value; do
+    # Ignorer les lignes commentées ou vides
+    if [[ $key =~ ^#.* ]] || [[ -z $key ]]; then
+        continue
     fi
-done < "$config_file"
 
+    # Supprimer les espaces et les guillemets autour des valeurs
+    key=$(echo "$key" | xargs)
+    value=$(echo "$value" | xargs | sed 's/^"//;s/"$//')
 
-sudo python3 tuninit.py $tun $options $inip $inport $outip $outport
+    # Exporter les variables dynamiquement
+    declare "$key"="$value"
+done < "$file"
+
+sudo python3 tuninit.py $tun $tunaddr $inip $inport $outip $outport $ipv4_gateway $ipv6_gateway $ipv6_dst_lan

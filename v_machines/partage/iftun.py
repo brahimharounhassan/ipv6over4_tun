@@ -6,6 +6,7 @@ from typing import Union
 # Some constants from Linux kernel header if_tun.h
 
 
+BUFFER_SIZE = 4096  
 
 class Interface:
     def __init__(self, tun_dev: str) -> None:
@@ -48,11 +49,9 @@ class Iftun:
     def __init__(self) -> 'Iftun':
         self.tun_dev = None
         self.tunfd = None
-        self.tun_address = None
         self.ipv6_dst_lan_addr = None
         self.ipv6_dst_tun_addr = None
         self.ipv4_dev = None           
-        self.ipv6_gateway = None         
     
           
     def show_traffic(self) -> None:
@@ -107,16 +106,23 @@ class Iftun:
         self.tunfd, _ = Interface(self.tun_dev).tun_alloc()
 
 
-    def set_address(self, tun_address:str) -> None:
+    def set_address(self, tun_address:str, ipv4_dst_addr: str, ipv4_gateway:str,ipv6_gateway: str, ipv6_dst_lan_addr : str) -> None:
         """Associate address with TUN device."""
-        self.tun_address = tun_address
         if self.tun_dev is not None : 
             try:
                 subprocess.run(("sudo", "ip", "address", "add", tun_address, "dev", self.tun_dev), check=True)
                 self.up()
             except subprocess.CalledProcessError as e:
                 print(f"On func set_address --> Error : {e}")
-                exit(-1)            
+                exit(-1)           
+        if  self.check_exist_cmd(("ip", "-6", "route", "show"),  ipv6_gateway) == False or self.check_exist_cmd(("ip", "-6", "route", "show"),  ipv6_dst_lan_addr) == False:
+            subprocess.run(("sudo", "ip", "-6", "route", "add", ipv6_dst_lan_addr, "via", ipv6_gateway, "dev", self.tun_dev), check=True)
+        if self.check_exist_cmd(("ip", "route", "show"),  ipv4_gateway) == False or self.check_exist_cmd(("ip", "route", "show"),  ipv4_dst_addr ) == False :
+            try:
+                subprocess.run(("sudo", "ip", "route", "add", ipv4_dst_addr ,"via", ipv4_gateway, "dev", "eth1"), check=True)
+            except subprocess.CalledProcessError as e:
+                print(f"On func set_address --> Error : {e}")
+                exit(-1) 
         
         subprocess.run(("ip", "address"))
 
@@ -129,7 +135,7 @@ class Iftun:
         while True:
             data = None
             try:
-                data = os.read(src,0xFFFF)
+                data = os.read(src,BUFFER_SIZE)
                 print("Reading data from tun")
                 try:
                     print(f"Data send to descriptor {dst}.")
@@ -144,12 +150,3 @@ class Iftun:
                 break
                       
   
-""""
-IPv6 over IPv4 tunnels are point-to-point tunnels made by encapsulating IPv6 packets within IPv4 headers to carry them over IPv4 routing infrastructures. 
-
-All tunneling mechanisms require that the endpoints of the tunnel run both IPv4 and IPv6 protocol
-stacks, that is, endpoints must run in dual-stack mode. A dual stack network is a network in which
-all of the nodes are both IPv4 and IPv6 enabled.
-
-As with other tunnel mechanisms, network address translation (NAT) is not allowed along the path of the tunnel.
-"""

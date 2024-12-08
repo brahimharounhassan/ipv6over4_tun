@@ -6,6 +6,16 @@ NetworkManager:
   service:
     - dead
     - enable: False
+        
+iperf3:
+  pkg.installed:
+    - refresh: True
+    - allow_updates: True   
+    
+radvd:
+  pkg.installed:
+    - refresh: True
+    - allow_updates: True
     
 ## Suppression de la passerelle par défaut
 ip route del default:
@@ -41,10 +51,10 @@ eth2:
 
 
 ## Configuration de la route vers LAN4-6 via "VM3"
-#routes:
- # network.routes:
-  #  - name: eth2
-   # - routes:
-    #  - name: LAN4-6
-     #   ipaddr: fc00:1234:4::/64
-      #  gateway: fc00:1234:ffff::2
+routes:
+  network.routes:
+    - name: eth2
+    - routes:
+      - name: LAN4-6
+        ipaddr: fc00:1234:4::/64
+        gateway: fc00:1234:3::1

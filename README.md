@@ -27,6 +27,7 @@ Ce pendant, nous allons relier nos deux îlots IPv6 via le réseau IPv4 en créa
         - `tuninit.py/`: Script permettant d'initialiser la bibliothèque `Iftun` afin de créer l'interface virtuelle et lancer le server permettant la communication à partir d'une machine (ex. VM1 ou VM3).
         - `tunnel64d.sh/`: permet de lire la configuration contenue dans `tun_side1.txt` ou `tun_side2.txt` et appeler `tuninit.py` pour initialiser un tunnel avec les données adéquats.
         - `tun_side1.txt/` et `tun_side2.txt/`: Contiennent les configuration sélon l'extrimité du tunnel choisi, servant d'entrée au fichier `tunnel64d.sh`.
+    - [x] `VM1`, `VM2`, `VM3`, `VM1-6`, `VM3-6`: Contiennent tous les les machines virtuelles et leurs différents fichiers de configuration.
 
 
 ## Usage
@@ -41,10 +42,10 @@ cd projet_reseau/v_machines/
 sudo chmod +x tunnel64d.sh
 
 # A partir de VM1, faire:
-./conf1.sh tun_side1.txt
+./tunnel64d.sh tun_side1.txt
 
 # A partir de VM3, faire:
-./conf1.sh tun_side2.txt
+./tunnel64d.sh tun_side2.txt
 
 ```
 
