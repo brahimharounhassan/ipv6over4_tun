@@ -49,9 +49,6 @@ class Iftun:
     def __init__(self) -> 'Iftun':
         self.tun_dev = None
         self.tunfd = None
-        self.ipv6_dst_lan_addr = None
-        self.ipv6_dst_tun_addr = None
-        self.ipv4_dev = None           
     
           
     def show_traffic(self) -> None:
@@ -108,6 +105,7 @@ class Iftun:
 
     def set_address(self, tun_address:str, ipv4_dst_addr: str, ipv4_gateway:str,ipv6_gateway: str, ipv6_dst_lan_addr : str) -> None:
         """Associate address with TUN device."""
+        in_tun = 'tun1' if "0" in self.tun_dev else 'tun0'
         if self.tun_dev is not None : 
             try:
                 subprocess.run(("sudo", "ip", "address", "add", tun_address, "dev", self.tun_dev), check=True)
@@ -116,15 +114,22 @@ class Iftun:
                 print(f"On func set_address --> Error : {e}")
                 exit(-1)           
         if  self.check_exist_cmd(("ip", "-6", "route", "show"),  ipv6_gateway) == False or self.check_exist_cmd(("ip", "-6", "route", "show"),  ipv6_dst_lan_addr) == False:
-            subprocess.run(("sudo", "ip", "-6", "route", "add", ipv6_dst_lan_addr, "via", ipv6_gateway, "dev", self.tun_dev), check=True)
+            subprocess.run(("sudo", "ip", "-6", "route", "add", ipv6_dst_lan_addr, "via", ipv6_gateway),check=True)#"dev", self.tun_dev), check=True)
         if self.check_exist_cmd(("ip", "route", "show"),  ipv4_gateway) == False or self.check_exist_cmd(("ip", "route", "show"),  ipv4_dst_addr ) == False :
             try:
                 subprocess.run(("sudo", "ip", "route", "add", ipv4_dst_addr ,"via", ipv4_gateway, "dev", "eth1"), check=True)
             except subprocess.CalledProcessError as e:
                 print(f"On func set_address --> Error : {e}")
                 exit(-1) 
+        try:
+            # subprocess.run(("ping6", ipv6_dst_lan_addr.split("/")[0]), check=True)
+            subprocess.run(("ip", "-6", "neigh"), check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"On func set_address --> Error : {e}")
+            exit(-1)           
         
         subprocess.run(("ip", "address"))
+        subprocess.run(("ip", "-6", "r"))
 
 
     def from_tun_to(self, src:int, dst:int) -> None:

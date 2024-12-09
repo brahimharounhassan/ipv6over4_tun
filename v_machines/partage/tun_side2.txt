@@ -10,7 +10,7 @@ outport=123
 # ipv4_gateway
 ipv4_gateway=172.16.2.162
 # ipv6_gateway 
-ipv6_gateway=fc00:1234:ffff::
+ipv6_gateway=fc00:1234:ffff::1
 # ipv6_dst_lan
 ipv6_dst_lan=fc00:1234:3::/64
 # Fin

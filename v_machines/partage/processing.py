@@ -93,11 +93,25 @@ class Encapsulate:
         
     def encapsulate_ipv6_in_tcp_ipv4(self, src_ipv4: str, dst_ipv4: str, src_port: int, dst_port: int, ipv6_packet: bytes) -> bytes:
         """Encapsuler un paquet IPv6 dans TCP sur IPv4."""
+        # ipv6_packet = self.head_len_in(ipv6_packet)
         tcp_header = self.create_tcp_header(src_ipv4, dst_ipv4, src_port, dst_port, ipv6_packet)
         payload_length = len(tcp_header) + len(ipv6_packet)
         ipv4_header = self.create_ipv4_header(src_ipv4, dst_ipv4, payload_length)
         ipv4_packet = ipv4_header + tcp_header + ipv6_packet
         return ipv4_packet
+    
+    # def head_auto(self, packet: bytes) -> bytes:
+        
+
+    def head_len_in(self, packet: bytes) -> bytes:
+        # Calculer la taille du paquet IPv6 (sans les en-têtes)
+        packet_size = len(packet)
+        
+        # Créer un en-tête de 2 octets pour la taille du paquet
+        size_header = struct.pack("!H", packet_size)  # !H = unsigned short (2 octets)
+        
+        # Ajouter la taille au début du paquet IPv6
+        return size_header + packet
 
 
 class Decapsulate:
@@ -162,5 +176,25 @@ class Decapsulate:
         return {
             "ipv4_info": ipv4_info,
             "tcp_info": tcp_info,
-            "ipv6_packet": ipv6_packet,
+            "ipv6_packet": ipv6_packet
+            # "ipv6_packet": self.head_len_out(ipv6_packet),
             }
+        
+    
+    def head_len_out(self, packet: bytes) -> bytes:
+        
+        # Extraire les 2 premiers octets qui contiennent la taille
+        size_header = packet[:2]
+        
+        # Dépackager la taille du paquet (2 octets)
+        packet_size = struct.unpack("!H", size_header)[0]
+        
+        # Extraire le paquet IPv6 sans les 2 octets de taille
+        ipv6_packet = packet[2:]
+        
+        # Vérifier si la taille est correcte (facultatif)
+        if len(ipv6_packet) != packet_size:
+            raise ValueError("La taille du paquet ne correspond pas à la taille attendue.")
+        
+        return ipv6_packet
+        

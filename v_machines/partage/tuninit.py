@@ -12,6 +12,7 @@ if __name__ == "__main__":
     iftun = Iftun()
     iftun.create_vnet_device(tun_name)
     iftun.set_address(tun_address, ipv4_dst_addr, ipv4_gateway, ipv6_gateway, ipv6_dst_lan)
+    # iftun.set_iptables(ipv4_src_addr=ipv4_src_addr, ipv4_dst_addr=ipv4_dst_addr, ipv6_gateway=ipv6_gateway)
     tun_dev = iftun.tun_dev
     tun_fd = iftun.tunfd
 
@@ -22,13 +23,12 @@ if __name__ == "__main__":
                         src_port=int(src_port),
                         dst_port=int(dst_port),
                         proto="tcp")
-    
     print(f'The tunnel: "{tun_dev}" with fd: {tun_fd} is created ;)\nEnjoy it.')
     while True: 
         # iftun.from_tun_to(tun_fd, dst=1) # execution: ./config1.sh | hexdump -C
         # iftun.show_traffic()
         traffic.start()
-        # os.close(tun_fd)
+        os.close(tun_fd)
     
     
     

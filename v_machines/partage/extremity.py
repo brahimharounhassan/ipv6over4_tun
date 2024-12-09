@@ -14,168 +14,147 @@ class Extremity:
         self.tun_fd = tun_fd
         self.dst_address = dst_address
         self.src_address = src_address
-        self.treads = []
+        self.threads = []
         self.tun_address = tun_address
         self.connected_client = {}
         self.connected_client_lock = Lock()
         
-        self.server = None
-        self.client = None
-        self.connexion = None
-        self.client_address = None
-        
         self.encapsulate = Encapsulate()
         self.decapsulate = Decapsulate()
         
-    
-    
     def start(self) -> None :
         self.ext_out()
+        self.close_all()
+        
    
-    
     def ext_out(self) -> None:
         """Initialize the server socket and start listening."""
-        self.server = socket.socket(socket.AF_INET6, socket.SOCK_STREAM if self.proto == "tcp" else socket.SOCK_DGRAM)
+        
         try:
-            self.server.bind(("", self.src_port))
-            print(f"Server started --> listening on port: {self.src_port}")
-            self.ext_in()
+            server = socket.socket(socket.AF_INET6, socket.SOCK_STREAM if self.proto == "tcp" else socket.SOCK_DGRAM)
+            server.bind(("", self.src_port))
+                        
+            self.tcp(server) if self.proto == "tcp" else self.udp(server)
         
         except Exception as e:
             print(f"Can not connect to port: {self.src_port}")
-            print(f"On start func (server) --> Error: {e}")
-            self.close_all()
-            exit(1)
+            print(f"On ext_out func (server) --> Error: {e}")
+            server.close()
             
         
-    def ext_in(self) -> None:
+    def ext_in(self, client) -> None:
         """Handle incoming connections based on protocol."""
-        self.tcp() if self.proto == "tcp" else self.udp()
-        self.close_all()
-    
+        
+        """Send data from the local tunnel to the remote endpoint."""
+        print("Ipv6 writer Thread launched...")
             
-    def tcp(self) -> None:
-        """Handle TCP connections."""                                                                                                                           
-        
-        print("TCP connection mode.")
-        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        
-        while True:                                                                                                                         
-            try:
-                self.server.listen()
-                print("Waiting for new connections...")
-                try:
-                    self.connexion, self.client_address = self.server.accept()
-                    print(f"Connected with: {self.client_address}")
-                    if self.client_address[0].split(":")[-1] != self.dst_address:
-                        t = Thread(target=self.receive_from_ipv6)
-                        t.daemon = True
-                        t.start()
-                        self.treads.append(t)
-                        
-                    else: 
-                        
-                        # self.from_ipv4_to_tun()
-                        t = Thread(target=self.from_ipv4_to_tun)
-                        t.daemon = True
-                        t.start()
-                        self.treads.append(t)    
-                         
-                except Exception as e:
-                    print(f"Enable to establish connexion.")
-                    print(f"On tcp func (accept) --> Error: {e}")
-                    break
-
-            except Exception as e:
-                print("Server stopped.")
-                print(f"On tcp func (listen) --> Error: {e}.")
-                break
-                
-        print("TCP connexion interrupted.")
-        self.join_threads()
-  
-    
-    def receive_from_ipv6(self) -> None:
-        """Receive data from the IPv6 client."""
-        
-        self.add_client(self.dst_address, self.dst_port)
-        
-        print("Ipv6 Receiver  Thread launched...")
-        # if not self.connected_client or not (self.dst_address, self.dst_port) in self.connected_client.keys():
-        #     self.connected_client[(self.dst_address, self.dst_port)] = self.client
-        try:
-            self.client.connect((self.dst_address, self.dst_port))
-            print(f"Connexion with {self.dst_address} established...")
-        except Exception as e:
-            print("Connexion impossible.")
-            print(f"On host connexion (func receive_from_ipv6) --> Error: {e}")
-
         while True:
             try:
-                ipv6_packet = self.connexion.recv(BUFFER_SIZE) if self.proto == "tcp" else self.server.recvfrom(BUFFER_SIZE)[0]
-                print(f"Receiving data from: {self.client_address[0]}")
+                ipv6_packet = os.read(self.tun_fd, BUFFER_SIZE)
+                if ipv6_packet:
+                    ipv4_header = self.encapsulate.encapsulate_ipv6_in_tcp_ipv4(
+                        self.src_address,
+                        self.dst_address, 
+                        self.src_port, 
+                        self.dst_port, 
+                        ipv6_packet)
+                    encapsulated_packet = ipv4_header + ipv6_packet
+                    if encapsulated_packet:
+                        client.sendall(encapsulated_packet)
+                        print(f"Data sended from local tunnel to {self.dst_address}")
+                else:
+                    break
+            except Exception as e:
+                print(f"Impossible to send data to {self.dst_address}:")
+                print(f"On reading data (func send_to_tun_extrimity) --> Error: {e}")
+                break
+            
+        client.close()
+        exit(1)
+
+    def tcp(self, server) -> None:
+        """Handle TCP connections."""                                                                                                                           
+        
+        print("TCP connection mode.")       
+        print(f"Server {self.proto} started --> listening on port: {self.src_port}")
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        while True:                                                                                                                         
+            print("Waiting for new connections...")
+            try:
+                client.connect((self.dst_address, self.dst_port))
+                print("Connexion established with: ", self.dst_address)
+                writer = Thread(target=self.ext_in,args=(client,))
+                writer.daemon = True
+                writer.start()
+                self.threads.append(writer)
+            except Exception as e:
+                pass
+                # print(f"On tcp func!!!!!")
+                # print(f"{e}")
+
+
+            server.listen()
+            connexion, client_address = server.accept()
+            
+            print(f"Connected with: {client_address}")
+            if client_address[0].split(":")[-1] != self.dst_address:
+                reader = Thread(target=self.receive_from_ipv6, args=(connexion,))
+                reader.daemon = True
+                reader.start()
+                self.threads.append(reader)
+                
+                writer = Thread(target=self.ext_in,args=(client,))
+                writer.daemon = True
+                writer.start()
+                self.threads.append(writer)
+
+            else: 
+                t = Thread(target=self.from_ipv4_to_tun, args=(connexion,))
+                t.daemon = True
+                t.start()
+                self.threads.append(t)
+                
+    
+    def receive_from_ipv6(self, connexion) -> None:
+        """Receive data from the IPv6 client."""
+        
+        print("Ipv6 reader Thread launched...")
+        print(f"Receiving data from: {connexion.getpeername()[0]}")
+        while True:
+            try:
+                ipv6_packet = connexion.recv(BUFFER_SIZE) if self.proto == "tcp" else connexion.recvfrom(BUFFER_SIZE)[0]
                     
                 if ipv6_packet:
-                    print( self.check_packet_type(ipv6_packet))
+                    print("Packet type: ", self.check_packet_type(ipv6_packet))
                     self.save_to_local_tun(ipv6_packet=ipv6_packet)
-                    self.send_to_tun_extrimity()
                 else:
-                    self.remove_client(self.dst_address, self.dst_port)
                     break
-                
+                    
             except Exception as e:
-                print(f"Enable to read data from {self.client_address[0]}")
+                print(f"Enable to read data from {connexion.getpeername()[0]}")
                 print(f"On reading data (func run) --> Error: {e}",)
-                self.remove_client(self.dst_address, self.dst_port)
                 break
-        exit(0)
-
+        connexion.close()
         
-    def save_to_local_tun(self, ipv6_packet: bytes) -> None:
+    def save_to_local_tun(self, ipv6_packet) -> None:
         """Write the IPv6 packet to the local tunnel."""
-        
         try:
             os.write(self.tun_fd, ipv6_packet)
-            print(f"Writing data into local tunnel.")
-            
-        except Exception  as e:
+            print(f"Ipv6 wrote into local tunnel.")
+        except Exception as e:
             print(f"Enable to write data into local tunnel.")
             print(f"On save_to_local_tun func --> Error: {e}") 
-       
- 
-    def send_to_tun_extrimity(self) -> None:
-        """Send data from the local tunnel to the remote endpoint."""
-        try:
-            ipv6_packet = os.read(self.tun_fd, BUFFER_SIZE)
-            print("Reading data from local tunnel")
-            if ipv6_packet:
-                ipv4_header = self.encapsulate.encapsulate_ipv6_in_tcp_ipv4(
-                    self.src_address,
-                    self.dst_address, 
-                    self.src_port, 
-                    self.dst_port, 
-                    ipv6_packet)
-                encapsulated_packet = ipv4_header + ipv6_packet
-                # try:
-                self.client.sendall(encapsulated_packet)
-                print(f"Data sended from local tunnel to {self.dst_address}")
-                # except Exception as e:
-                #     print(f"Impossible  to send data from local to {self.dst_address}")
-                #     print(f"On sending data (func send_to_tun_extrimity) --> Error: {e}")
-                #     exit(0)        
-        except Exception as e:
-            print("Impossible to send data to {self.dst_address}:")
-            print(f"On reading data (func send_to_tun_extrimity) --> Error: {e}")
-                
+                   
 
-    def from_ipv4_to_tun(self) -> None:
+    def from_ipv4_to_tun(self, client_connexion) -> None:
         """Receive and process encapsulated IPv6 packets from IPv4."""
         
         print("Ipv4 Receiver  Thread launched...")
+        print(f"Receiving data from: {client_connexion.getpeername()[0]}")                    
         while True:
             try:
-                encapsulated_packet = self.connexion.recv(BUFFER_SIZE)  
-                print(f"Receiving data from: {self.connexion.getpeername()[0]}")                    
+                encapsulated_packet = client_connexion.recv(BUFFER_SIZE)  
+                print("IPv4 data received:", encapsulated_packet)
                 if encapsulated_packet:
                     decapsulated_packet = self.decapsulate.decapsulate_ipv6_from_ipv4(encapsulated_packet)
                     print(self.check_packet_type(encapsulated_packet))
@@ -186,32 +165,26 @@ class Extremity:
                     print("TCP header :", decapsulated_packet["tcp_info"])
                     print("Decapsulated IPv6:", decapsulated_packet["ipv6_packet"])
                     self.save_to_local_tun(decapsulated_packet["ipv6_packet"])
-                else:
+                    
+                else: 
                     break
                 
             except Exception as e:
-                print(f"Enable to read data from {self.connexion.getpeername()[0]}")
+                print(f"Enable to read data from {client_connexion.getpeername()[0]}")
                 print(f"On reading data (func run) --> Error: ", e)
-                self.connexion.close()
                 break
-        exit(0)    
+        client_connexion.close()
        
         
-    def udp(self) -> None:  
+    def udp(self, connexion) -> None:  
         """Handle UDP communication."""
         
         print("UDP connexion.")
-        self.receive_from_ipv6()
+        self.receive_from_ipv6(connexion)
      
         
     def close_all(self) -> None:
         """Clean up resources."""
-        if self.server:
-            self.server.close()
-        if self.client:
-            self.client.close()
-        if self.tun_fd:
-            os.close(self.tun_fd)
         self.join_threads()
 
 
@@ -220,26 +193,7 @@ class Extremity:
         for t in self.threads:
             t.join()
     
-            
-    def add_client(self, address: str, port: int) -> None:
-        """Add a client to the connected clients list."""
-        with self.connected_client_lock:
-            if (address, port) not in self.connected_client:
-                self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.client.connect((address, port))
-                self.connected_client[(address, port)] = self.client
-                print(f"Client added: {address}:{port}")
-   
-                
-    def remove_client(self, address: str, port: int) -> None:
-        """Remove a client from the connected clients list."""
-        with self.connected_client_lock:
-            if (address, port) in self.connected_client:
-                self.connected_client[(address, port)].close()
-                del self.connected_client[(address, port)]
-                print(f"Client removed: {address}:{port}")
-  
-    
+     
     def check_packet_protocol(self, packet: bytes) -> str:
         if len(packet) < 20:  
             return "Invalid IPv4 packet"
