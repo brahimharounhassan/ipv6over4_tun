@@ -1,17 +1,22 @@
-# Configuration eth1 et eth2
-# RAPPEL: eth0 est à vagrant, ne pas y toucher
-
 ## Désactivation de network-manager
 NetworkManager:
   service:
     - dead
     - enable: False
-    
+
+# Installation du paquet netcat(6)
+netcat-openbsd:
+  pkg.installed:
+    - refresh: True
+    - allow_updates: True 
+
+# Installation de l’utilitaire iperf3
 iperf3:
   pkg.installed:
     - refresh: True
     - allow_updates: True   
-    
+
+# Installation du paquet radvd    
 radvd:
   pkg.installed:
     - refresh: True
@@ -22,7 +27,7 @@ ip route del default:
   cmd:
     - run
     
-##Configuration de VM1
+##Configuration des interface eth1 et eth2 de VM3-6, en statique
 eth1:
   network.managed:
     - enabled: True
@@ -33,8 +38,7 @@ eth1:
     - enable_ipv6: True
     - ipv6_autoconf: no
     - ipv6ipaddr: fc00:1234:2::36
-    - ipv6netmask: 64
-    
+    - ipv6netmask: 64    
 
 eth2:
   network.managed:
@@ -48,12 +52,14 @@ eth2:
     - ipv6ipaddr: fc00:1234:4::36
     - ipv6netmask: 64
 
-
-## Configuration de la route vers LAN3-6 via "VM1"
+## Configuration de la route vers LAN3-6 via "VM3"
 routes:
   network.routes:
     - name: eth2
     - routes:
+      - name: LAN3-6
+        ipaddr: fc00:1234:ffff::/64
+        gateway: fc00:1234:4::3
       - name: LAN3-6
         ipaddr: fc00:1234:3::/64
         gateway: fc00:1234:4::3

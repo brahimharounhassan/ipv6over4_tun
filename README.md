@@ -21,6 +21,8 @@ Ce pendant, nous allons relier nos deux îlots IPv6 via le réseau IPv4 en créa
     - `reseau6-tun.png` 
 - [x] `v_machines/`: contient les dossiers répresentant les machines virtuelles et leur configurations. 
     - [x] `partage/`: contient tous les scripts python et fichiers de configuration du tunnel.
+        - [x] `iperf3_output/`: 
+            - `out.csv/`: Contient les données de sortie du test `iperf3`.
         - `extremity.py/`: Contient le code servant à gérer le trafic entre extrémités du tunnel.
         - `iftun.py/`: contient tous le code permettant la création du tunnel.
         - `processing.py/`: contient le données nécessaire au traitement d'encapsulation et decapsulation des paquets réçus.
@@ -42,10 +44,14 @@ cd projet_reseau/v_machines/
 sudo chmod +x tunnel64d.sh
 
 # A partir de VM1, faire:
-./tunnel64d.sh tun_side1.txt
+./tunnel64d.sh tun_side1.txt 
+            ou
+./tunnel64d.sh tun_side1.txt | hexdump -C
 
 # A partir de VM3, faire:
 ./tunnel64d.sh tun_side2.txt
+            ou
+./tunnel64d.sh tun_side2.txt | hexdump -C
 
 ```
 

@@ -1,16 +1,21 @@
-# Configuration eth1 et eth2
-# RAPPEL: eth0 est à vagrant, ne pas y toucher
-
 ## Désactivation de network-manager
 NetworkManager:
   service:
     - dead
     - enable: False
     
-install_tcpdump:
+# Installatoin du paquet radvd
+radvd-package:
   pkg.installed:
-    - name: tcpdump
-    - refresh: True
+    - name: radvd
+
+# Activation du service radvd
+radvd-service:
+  service.running:
+    - name: radvd
+    - enabled: True
+    - watch:
+      - file: /etc/radvd.conf
     
 ## Suppression de la passerelle par défaut
 ip route del default:
@@ -59,10 +64,15 @@ net.ipv6.conf.all.forwarding:
   sysctl:
     - present
     - value: 1
-    
 
 ## Enable ipv4 forwarding
 net.ipv4.ip_forward:
   sysctl:
     - present
     - value: 1
+
+net.ipv6.conf.eth2.accept_ra:
+  sysctl:
+    - present
+    - value: 1
+    
