@@ -7,14 +7,10 @@ git branch -M main
 git push -uf origin main
 ``` -->
 
-=======
 ## Nom
-=======
 Projet de Réseau.
 
-==============
 ## Description
-==============
 
 Soit la topologie et configuration du réseau de base: constitué de deux réseaux IPv4 et IPv6, composé d'un ensemble de machines.
 Sachant que le lien entre les machines appartenant uniquement au réseaux IPv6 est coupé, ce qui rend impossible la communication entre les machines dudit réseaux. 
@@ -24,11 +20,10 @@ L'unique possbilité de communication est de faire transiter le trafic par le r�
 
 Le but de ce projet est de permettre des communications entre îlots IPv6 en utilisants des tunnels simples au-dessus de IPv4.
 Ce pendant, nous allons relier nos deux îlots IPv6 via le réseau IPv4 en créant un tunnel IPv6 sur IPv4 entre VM1 et VM3 (voir figure).
+<!--Mise en place d'un tunnel permmettant la communication entre deux machines d'un réseau ipv6 à travers le réseau ipv4, sachant que le lien direct entre les machines via le résaux upv6 est coupé.-->
 
 
-========================
 ## Overview du problème
-========================
 
     ----------------------------------------Réseau Ipv4 (IPv6 via Ipv4)--------------------------------------------
     |                                                                                                             |
@@ -55,11 +50,9 @@ Ce pendant, nous allons relier nos deux îlots IPv6 via le réseau IPv4 en créa
 Où `tun0` et `tun1` sont des interfaces réseaux virtuelles sur deux machines distinctes; `ext.1` et `ext.2` sont respectevement les extrémités 1 et 2  du tunnel
 
 L'image suivante illustre le fonctionnement du tunnel.
-![screenshot](images/tunneld6.png.png)
+![screenshot](images/tunneld6.png)
 
-=======================
 ## Structure du projet
-=======================
 
 - [x] `images/`: contenant l'image d'illustration:
     - `reseau6-tun.png` 
@@ -76,9 +69,7 @@ L'image suivante illustre le fonctionnement du tunnel.
     - [x] `VM1`, `VM2`, `VM3`, `VM1-6`, `VM3-6`: Contiennent tous les les machines virtuelles et leurs différents fichiers de configuration.
 
 
-=========
 ## Usage
-=========
 Cloner le projet via un terminal dans un dossier donné :
 ```
 clone https://etulab.univ-amu.fr/b24024546/projet_reseau.git
@@ -101,27 +92,19 @@ root@VM3:mnt/partage#./tunnel64d.sh tun_side2.txt | hexdump -C
 
 ```
 
-===========
 ## Auteurs 
-===========
 - [Brahim Haroun Hassan]
 - [DIALLO Ismaila]
 - [GUERRIER Vanessa]
 
 
-===========
 ## License
-===========
 
 Academic Free License ("AFL") v. 3.0
 
-====================
 ## Statut du projet
-====================
 En cours.
 
-=============
 # Références
-=============
 
 - [Projet Réseaux](https://pageperso.lis-lab.fr/emmanuel.godard/enseignement/tps-reseaux/projet/)
