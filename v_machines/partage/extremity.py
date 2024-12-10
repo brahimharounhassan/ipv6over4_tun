@@ -55,8 +55,6 @@ class Extremity:
                     ipv4_header = self.encapsulate.encapsulate_ipv6_in_tcp_ipv4(
                         self.src_address,
                         self.dst_address, 
-                        self.src_port, 
-                        self.dst_port, 
                         ipv6_packet)
                     encapsulated_packet = ipv4_header + ipv6_packet
                     if encapsulated_packet:
@@ -89,8 +87,6 @@ class Extremity:
                 self.threads.append(writer)
             except Exception as e:
                 pass
-                # print(f"On tcp func!!!!!")
-                # print(f"{e}")
 
 
             server.listen()
@@ -156,15 +152,15 @@ class Extremity:
                 encapsulated_packet = client_connexion.recv(BUFFER_SIZE)  
                 print("IPv4 data received:", encapsulated_packet)
                 if encapsulated_packet:
-                    decapsulated_packet = self.decapsulate.decapsulate_ipv6_from_ipv4(encapsulated_packet)
-                    print(self.check_packet_type(encapsulated_packet))
                     print(self.identify_tunnel_packet(encapsulated_packet))
-                    print("Decapsulated IPv4 header:", decapsulated_packet["ipv4_info"])
+                    decapsulated_packet = self.decapsulate.decapsulate_ipv6_from_ipv4(encapsulated_packet)
+                    ipv4_header = decapsulated_packet["ipv4_header"]
+                    ipv6_packet = decapsulated_packet["ipv6_packet"]
                     
-                    print("IPv4 header :", decapsulated_packet["ipv4_info"])
-                    print("TCP header :", decapsulated_packet["tcp_info"])
-                    print("Decapsulated IPv6:", decapsulated_packet["ipv6_packet"])
-                    self.save_to_local_tun(decapsulated_packet["ipv6_packet"])
+                    print(f"Decapsulated IPv4 header: {ipv4_header}")
+                    print("Decapsulated IPv6: ", ipv6_packet)
+                    
+                    self.save_to_local_tun(ipv6_packet)
                     
                 else: 
                     break
@@ -198,13 +194,26 @@ class Extremity:
         if len(packet) < 20:  
             return "Invalid IPv4 packet"
         
-        protocol = packet[9]  
-        if protocol == 0x06:
+        ipv4_header = packet[:20]
+    
+        header_fields = struct.unpack('!BBHHHBBH4s4s', ipv4_header)
+        protocol = header_fields[6]
+            
+        # protocol = packet[9]  
+        if protocol == 0x01:
+            return "ICMP"
+        elif protocol == 0x02:
+            return "IGMP"
+        elif protocol == 0x06:
             return "TCP"
         elif protocol == 0x11:
             return "UDP"
-        elif protocol == 0x01:
-            return "ICMP"
+        elif protocol == 0x29:
+            return "ENCAP"
+        elif protocol == 0x59:
+            return "OSPF"
+        elif protocol == 0x84:
+            return "SCTP"
         else:
             return f"Unknown protocol (0x{protocol:02x})"
         
@@ -223,15 +232,13 @@ class Extremity:
  
         
     def identify_tunnel_packet(self, packet: bytes) -> str:
-        if len(packet) < 20:  # Vérification de la taille minimale d'un packet IPv4
+        if len(packet) < 20:  # Check the min length of IPv4 packet
             return "Invalid packet"
 
-        # Analyser le protocole IPv4
+        # Analyse the IPv4 protocol
         outer_protocol = self.check_packet_protocol(packet)
-        if outer_protocol == "TCP":
-            # Supposons que le contenu TCP encapsule IPv6
-            encapsulated = packet[20:]  # Ignorer les 20 octets de l'en-tête IPv4
-            inner_type = self.check_packet_type(encapsulated)
+        if outer_protocol == "ENCAP":
+            inner_type = self.check_packet_type(packet)
             return f"Tunnel IPv4 -> {inner_type}"
         return f"Non-tunnelled {outer_protocol}"
         
