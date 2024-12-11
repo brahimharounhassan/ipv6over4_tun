@@ -3,19 +3,18 @@ NetworkManager:
   service:
     - dead
     - enable: False
-    
-# Installatoin du paquet radvd
-radvd-package:
-  pkg.installed:
-    - name: radvd
 
-# Activation du service radvd
-radvd-service:
-  service.running:
-    - name: radvd
-    - enabled: True
-    - watch:
-      - file: /etc/radvd.conf
+# Installatoin du paquet radvd
+radvd:
+  pkg.installed:
+    - refresh: True
+    - allow_updates: True 
+    
+# Installation du paquet netcat(6)
+iptables:
+  pkg.installed:
+    - refresh: True
+    - allow_updates: True 
     
 ## Suppression de la passerelle par défaut
 ip route del default:

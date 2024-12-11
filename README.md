@@ -1,110 +1,98 @@
-# Réseau
+# Network
 ![Python 3.8.0](https://img.shields.io/badge/Python-3.8.0-yellow?style=plastic)
-<!-- ```
-cd existing_repo
-git remote add origin https://etulab.univ-amu.fr/master-1/complexite.git
-git branch -M main
-git push -uf origin main
-``` -->
 
-## Nom
-Projet de Réseau.
+## Name
+Network Project.
 
 ## Description
 
-Soit la topologie et configuration du réseau de base: constitué de deux réseaux IPv4 et IPv6, composé d'un ensemble de machines.
-Sachant que le lien entre les machines appartenant uniquement au réseaux IPv6 est coupé, ce qui rend impossible la communication entre les machines dudit réseaux. 
-L'unique possbilité de communication est de faire transiter le trafic par le réseau IPv4.  
+Consider the topology and configuration of the base network: consisting of two IPv4 and IPv6 networks, composed of a set of machines.
+Suppose the link between machines exclusively on the IPv6 network is disrupted (e.g., VM2-6 is off), making communication within this network impossible.
+The only possible communication is by routing traffic through the IPv4 network.  
 ![screenshot](images/reseau6.png)
 
+The goal of this project is to enable communication between IPv6 islands by using simple tunnels over IPv4.
+To achieve this, we will connect our two IPv6 islands through the IPv4 network by creating an IPv6-over-IPv4 tunnel between VM1 and VM3 (see figure).
 
-Le but de ce projet est de permettre des communications entre îlots IPv6 en utilisants des tunnels simples au-dessus de IPv4.
-Ce pendant, nous allons relier nos deux îlots IPv6 via le réseau IPv4 en créant un tunnel IPv6 sur IPv4 entre VM1 et VM3 (voir figure).
-<!--Mise en place d'un tunnel permmettant la communication entre deux machines d'un réseau ipv6 à travers le réseau ipv4, sachant que le lien direct entre les machines via le résaux upv6 est coupé.-->
+## Problem Overview
 
-
-## Overview du problème
-
-    ----------------------------------------Réseau Ipv4 (IPv6 via Ipv4)--------------------------------------------
-    |                                                                                                             |
-    +---------+                                      +----------+                                       +---------+
-    |   VM1   |              Tunnel (ext.1)          |    VM2   |          Tunnel (ext. 2)              |   VM3   |
-    |  [tun0] | ipv4(eth1) <-------------> ipv4(eth1)|[routeur] |ipv4(eth2) <--------------> ipv4(eth1) |  [tun1] |
-    |  (ipv6) |                                      |          |                                       |  (ipv6) |
-    +---------+                                      +----------+                                       +---------+
+    ----------------------------------IPv4 Network (IPv6 over IPv4)-------------------------------------
+    |                                                                                                   |
+    +---------+                                       +----------+                                      +---------+
+    |   VM1   |              Tunnel (ext.1)           |    VM2   |          Tunnel (ext.2)             |   VM3   |
+    |  [tun0] |ipv4(eth1) <---------------> ipv4(eth1)|[router]  |ipv4(eth2) <--------------> ipv4(eth1)|  [tun1] |
+    |  (ipv6) |                                       |          |                                      |  (ipv6) |
+    +---------+                                       +----------+                                      +---------+
     Ipv6(eht2)                                                                                           Ipv6(eht2)
          ^                                                                                                  ^   
          |                                                                                                  |   
          |                                                                                                  |
          |                                                                                                  |
-         v                                                                                                  V
+         v                                                                                                  v
     Ipv6(eht2)                                                                                          Ipv6(eht2)    
     +---------+                                       +----------+                                      +---------+
-    |         |               [Lien coupé]            |  VM2-6   |              [Lien coupé]            |         |
-    |  VM1-6  | ipv6(eth1)<---! X     X !-->ipv6(eth1)|[routeur] |ipv6(eth2)<---! X     X !-->ipv6(eth1)|  VM3-6  |
+    |         |               [Disconnected Link]     |  VM2-6   |              [Disconnected Link]     |         |
+    |  VM1-6  | ipv6(eth1)<---! X     X !-->ipv6(eth1)|[router]  |ipv6(eth2)<---! X     X !-->ipv6(eth1)|  VM3-6  |
     |         |                                       |          |                                      |         |
     +---------+                                       +----------+                                      +---------+
-    |                                                                                                             |
-    ---------------------------------------------------Réseaux pv6-------------------------------------------------
-                     
-Où `tun0` et `tun1` sont des interfaces réseaux virtuelles sur deux machines distinctes; `ext.1` et `ext.2` sont respectevement les extrémités 1 et 2  du tunnel
+    |                                                                                                   |
+    ---------------------------------------------IPv6 Networks-----------------------------------------
 
-L'image suivante illustre le fonctionnement du tunnel.
+Here, `tun0` and `tun1` are virtual network interfaces on two separate machines, while `ext.1` and `ext.2` are the tunnel endpoints.
+
+The following image illustrates the tunnel's functionality:
 ![screenshot](images/tunneld6.png)
 
-## Structure du projet
+## Project Structure
 
-- [x] `images/`: contenant l'image d'illustration:
-    - `reseau6-tun.png` 
-- [x] `v_machines/`: contient les dossiers répresentant les machines virtuelles et leur configurations. 
-    - [x] `partage/`: contient tous les scripts python et fichiers de configuration du tunnel.
+- [x] `images/`: Contains illustrative images and wireshark's traffic sreenshots:
+- [x] `v_machines/`: Contains directories representing virtual machines and their configurations.
+    - [x] `VM1`, `VM2`, `VM3`, `VM1-6`, `VM2-6`, `VM3-6`: Each contains the virtual machines and their respective configuration files.
+    - [x] `partage/`: Contains Python scripts and tunnel configuration files.
         - [x] `iperf3_output/`: 
-            - `out.csv/`: Contient les données de sortie du test `iperf3`.
-        - `extremity.py/`: Contient le code servant à gérer le trafic entre extrémités du tunnel.
-        - `iftun.py/`: contient tous le code permettant la création du tunnel.
-        - `processing.py/`: contient le données nécessaire au traitement d'encapsulation et decapsulation des paquets réçus.
-        - `tuninit.py/`: Script permettant d'initialiser la bibliothèque `Iftun` afin de créer l'interface virtuelle et lancer le server permettant la communication à partir d'une machine (ex. VM1 ou VM3).
-        - `tunnel64d.sh/`: permet de lire la configuration contenue dans `tun_side1.txt` ou `tun_side2.txt` et appeler `tuninit.py` pour initialiser un tunnel avec les données adéquats.
-        - `tun_side1.txt/` et `tun_side2.txt/`: Contiennent les configuration sélon l'extrimité du tunnel choisi, servant d'entrée au fichier `tunnel64d.sh`.
-    - [x] `VM1`, `VM2`, `VM3`, `VM1-6`, `VM3-6`: Contiennent tous les les machines virtuelles et leurs différents fichiers de configuration.
-
+            - `out.csv/`: Contains output data from `iperf3` tests.
+        - [x] `test/`: Contains unit tests.
+            - `test_extremity.py`: Contains unit tests for client/server communication methods and other tunnel functionalities.
+            - `test_processing.py`: Contains unit tests for IPv6 encapsulation and decapsulation methods.
+            - `test_iftun.py`: Contains unit tests for tunnel creation and initialization methods.
+        - [x] `src/`: 
+            - `extremity.py/`: Manages traffic between the tunnel's endpoints.
+            - `iftun.py/`: Contains the code for tunnel creation.
+            - `processing.py/`: Manages IPv6 packet encapsulation and decapsulation.
+            - `tuninit.py/`: Initializes the `Iftun` library to create the virtual interface and start communication from a machine (e.g., VM1 or VM3).
+            - `tunnel64d.sh/`: Reads configuration from `tun_side1.txt` or `tun_side2.txt` and calls `tuninit.py` to initialize a tunnel with the specified data.
+            - `tun_side1.txt/` and `tun_side2.txt/`: Contain configuration for each tunnel endpoint, used by `tunnel64d.sh`.
 
 ## Usage
-Cloner le projet via un terminal dans un dossier donné :
+
+Once the virtual machines are running:
+Download (zip) or Clone the project using a terminal in a specific folder:
+
 ```
 clone https://etulab.univ-amu.fr/b24024546/projet_reseau.git
 cd projet_reseau/v_machines/
-
-# Une fois les machines virtuelles lancées:
-# Naviguer vers : '/mnt/partage/', et donner le privilège d'exécution au fichier suivant:
-
+# Navigate to /mnt/partage/src/ and grant execution privileges to the following file:
 sudo chmod +x tunnel64d.sh
 
-# A partir de VM1, faire:
-root@VM1:mnt/partage# ./tunnel64d.sh tun_side1.txt 
-            ou
-root@VM1:mnt/partage#./tunnel64d.sh tun_side1.txt | hexdump -C
+# From VM1, execute:
+root@VM1:/mnt/partage/src# ./tunnel64d.sh tun_side1.txt or root@VM1:/mnt/partage/src# ./tunnel64d.sh tun_side1.txt | hexdump -C
 
-# A partir de VM3, faire:
-root@VM3:mnt/partage#./tunnel64d.sh tun_side2.txt
-            ou
-root@VM3:mnt/partage#./tunnel64d.sh tun_side2.txt | hexdump -C
+# From VM3, execute:
+root@VM3:/mnt/partage/src# ./tunnel64d.sh tun_side2.txt or root@VM3:/mnt/partage/src# ./tunnel64d.sh tun_side2.txt | hexdump -C
 
 ```
 
-## Auteurs 
+## Authors 
 - [Brahim Haroun Hassan]
 - [DIALLO Ismaila]
 - [GUERRIER Vanessa]
 
-
 ## License
-
 Academic Free License ("AFL") v. 3.0
 
-## Statut du projet
-En cours.
+## Project Status
+Ongoing...
 
-# Références
+## References
 
-- [Projet Réseaux](https://pageperso.lis-lab.fr/emmanuel.godard/enseignement/tps-reseaux/projet/)
+- [Network Project](https://pageperso.lis-lab.fr/emmanuel.godard/enseignement/tps-reseaux/projet/)

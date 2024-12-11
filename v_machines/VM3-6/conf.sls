@@ -15,12 +15,6 @@ iperf3:
   pkg.installed:
     - refresh: True
     - allow_updates: True   
-
-# Installation du paquet radvd    
-radvd:
-  pkg.installed:
-    - refresh: True
-    - allow_updates: True
     
 ## Suppression de la passerelle par défaut
 ip route del default:
