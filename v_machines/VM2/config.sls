@@ -1,18 +1,9 @@
-# Configuration eth1 et eth2
-# RAPPEL: eth0 est à vagrant, ne pas y toucher
-
-## Désactivation de network-manager
-NetworkManager:
-  service:
-    - dead
-    - enable: False
-
-## Suppression de la passerelle par défaut
+## Delete default gateway
 ip route del default:
   cmd:
     - run
 
-## Configuration de VM2
+## eth1 and eth2 interface Configuration 
 eth1:
   network.managed:
     - enabled: True

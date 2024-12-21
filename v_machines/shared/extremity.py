@@ -1,5 +1,4 @@
 import socket
-# import struct
 from threading import Thread, Lock
 import os
 from concurrent.futures import ThreadPoolExecutor

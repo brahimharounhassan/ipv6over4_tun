@@ -1,27 +1,20 @@
-## Désactivation de network-manager
-NetworkManager:
-  service:
-    - dead
-    - enable: False
-
-# Installation du paquet netcat(6)
+# some packages we needed
 netcat-openbsd:
   pkg.installed:
     - refresh: True
     - allow_updates: True 
 
-# Installation de l’utilitaire iperf3
 iperf3:
   pkg.installed:
     - refresh: True
     - allow_updates: True   
     
-## Suppression de la passerelle par défaut
+## Delete default gateway
 ip route del default:
   cmd:
     - run
     
-##Configuration des interface eth1 et eth2 de VM3-6, en statique
+## eth1 and eth2 interface Configuration 
 eth1:
   network.managed:
     - enabled: True
@@ -46,7 +39,7 @@ eth2:
     - ipv6ipaddr: fc00:1234:4::36
     - ipv6netmask: 64
 
-## Configuration de la route vers LAN3-6 via "VM3"
+## route to LAN3-6 via VM3 Configuration
 routes:
   network.routes:
     - name: eth2
