@@ -56,15 +56,21 @@ The following image illustrates the tunnel's functionality:
         - `tunnel64d.sh/`: Reads configuration from `tun_side1.txt` or `tun_side2.txt` and calls `tuninit.py` to initialize a tunnel with the specified data.
         - `tun_side1.txt/` and `tun_side2.txt/`: Contain configuration for each tunnel endpoint, used by `tunnel64d.sh`.
 
+## Installation
+1. Clone the repository :
+   ```
+   git clone https://github.com/brahimharounhassan/ipv6over4_tun.git
+   cd ipv6over4_tun
+   ```
+2. Intall dependency :
+    The preinstalled "debian" disk image (a minimalist version of Debian/XFCE) is needed by the VMs.
+
 ## Usage
-Note : we used a preinstalled "debian" disk image (a minimalist version of Debian/XFCE) for our VMs.
 
 Once the virtual machines are running:
-Download (zip) or Clone the project using a terminal in a specific folder:
 
 ```
-clone the repository
-cd ipv6over4_tun/v_machines/
+cd v_machines/
 # Navigate to /mnt/shared and grant execution privileges to the following file:
 sudo chmod +x tunnel64d.sh
 
@@ -77,7 +83,9 @@ root@VM3:/mnt/shared# ./tunnel64d.sh tun_side2.txt or root@VM3:/mnt/shared# ./tu
 ```
 
 ## Author
-- [Brahim Haroun Hassan]
+- Haroun Hassan BRAHIM - Ingénieur en Intelligence Artificielle | Spécialisé en Machine Learning et Deep Learning
+
+  [LinkedIn](https://www.linkedin.com/in/brahimharounhassan/) | [Github](https://github.com/brahimharounhassan) | [ResearchGate](https://www.researchgate.net/profile/Haroun-Hassan-Brahim)
 
 ## License
 Academic Free License ("AFL") v. 3.0
